@@ -18,13 +18,10 @@ import javafx.stage.Modality;
 import javafx.stage.Stage;
 import javafx.stage.WindowEvent;
 
-import java.io.DataInputStream;
-import java.io.DataOutputStream;
-import java.io.IOException;
+import java.io.*;
 import java.net.Socket;
 import java.net.SocketException;
 import java.net.URL;
-import java.sql.*;
 import java.util.ResourceBundle;
 
 public class Controller implements Initializable {
@@ -47,19 +44,13 @@ public class Controller implements Initializable {
     DataInputStream in;
     DataOutputStream out;
 
-    // Средство позволяющее создавать соединение с БД
-    private static Connection connection;
-    // Средство позволяющее делать запросы в базу данных
-    private static Statement statement;
-
     final String IP_ADDRESS = "localhost";
     final int PORT = 8189;
 
     private boolean authenticated;
-    private String nickname;
+    public String nickname;
 
     Stage regStage;
-
 
     public void setAuthenticated(boolean authenticated) {
         this.authenticated = authenticated;
@@ -100,61 +91,6 @@ public class Controller implements Initializable {
 
     }
 
-    // Способ авторизации через sql
-    public void SQLAut(String login, String password, String nickname) {
-        // Подключаем сокет
-        if (socket == null || socket.isClosed()) {
-            connect();
-        }
-        // Подлючаемся к SQL базе и вытягиваем из неё данные (логин, пароль, никнейм)
-        try {
-            connecting();
-            System.out.println("Подключились!");
-            ResultSet rs = statement.executeQuery("SELECT nickname, login, password, FROM LogPass");
-            while (rs.next()) {
-                String n1 = "";
-                String l1 = "";
-                String p1 = "";
-                rs.getString(nickname = n1);
-                rs.getString(login = l1);
-                rs.getString(password = p1);
-            }
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-
-        try {
-//            out.writeUTF("/auth " + loginField.getText() + " " + passwordField.getText());
-            if (password != null) {
-                setAuthenticated(true);
-            } else {
-                disconnect();
-                socket.isClosed();
-            }
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-    }
-
-    public static void connecting() throws ClassNotFoundException, SQLException {
-        Class.forName("org.sqlite.JDBC");
-        connection = DriverManager.getConnection("jdbc:sqlite:LogPassword.db");
-        statement = connection.createStatement();
-    }
-
-    public static void disconnect() {
-        try {
-            statement.close();
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
-        try {
-            connection.close();
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
-    }
-
     public void connect() {
         try {
             socket = new Socket(IP_ADDRESS, PORT);
@@ -176,6 +112,11 @@ public class Controller implements Initializable {
 
                     setTitle("chat 2020 : " + nickname);
 
+                    // Запускаем запись чата в Файл
+                    if (nickname != null) {
+                        new History();
+                    }
+
                     //цикл работы
                     while (true) {
                         String str = in.readUTF();
@@ -192,6 +133,10 @@ public class Controller implements Initializable {
                                         clientList.getItems().add(token[i]);
                                     }
                                 });
+                            }
+                            if (str.startsWith("/yournickis ")) {
+                                nickname = str.split(" ")[1];
+                                setTitle("chat 2020 : " + nickname);
                             }
 
                         } else {
@@ -212,6 +157,7 @@ public class Controller implements Initializable {
                     }
                 }
             }).start();
+            new History();
 
         } catch (IOException e) {
             e.printStackTrace();

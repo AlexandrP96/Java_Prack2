@@ -18,7 +18,9 @@
             <artifactId>sqlite-jdbc</artifactId>
             <version>3.28.0</version>
         </dependency>
+
     </dependencies>
+
 
     <build>
         <finalName>ChatServer</finalName>
