@@ -8,8 +8,12 @@ import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.Scanner;
 import java.util.Vector;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 public class Server {
+    //
+    private final ExecutorService clientsExecutorService;
     private Vector<ClientHandler> clients;
     private AuthService authService;
 
@@ -24,6 +28,8 @@ public class Server {
             throw new RuntimeException("Не удалось подключиться к БД");
         }
         authService = new DBAuthServise();
+        // Указываем кэширующий пул потоков
+        clientsExecutorService = Executors.newCachedThreadPool();
 
         ServerSocket server = null;
         Socket socket = null;
@@ -48,6 +54,11 @@ public class Server {
                 e.printStackTrace();
             }
         }
+    }
+
+    // Возвращаем ExecutorService
+    public ExecutorService getClientsExecutorService() {
+        return clientsExecutorService;
     }
 
     public void broadcastMsg(String nick, String msg) {
